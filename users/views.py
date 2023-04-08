@@ -12,14 +12,11 @@ from vonage import Sms
 from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
 
 from users.models import User
-from users.permissions import OwnerPermissions, StaffPermission, CustomerPermission
 from users.serializers import UserSerializers
-from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
 
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.core.mail import send_mail
 from django.conf import settings
 
 from rest_framework import status
@@ -51,11 +48,16 @@ class PhoneVerificationView(APIView):
 
     def post(self, request):
         phone_number = request.data.get('phone_number')
-        print(request.user.is_phone_verified,request.user.phone_number)
+        print(request.user.is_phone_verified, request.user.phone_number)
         if not phone_number:
             return Response({'error': 'Please provide a phone number'}, status=400)
         if request.user.is_phone_verified:
             return Response({'error': 'phone number is already Verified'}, status=400)
+        if request.user.phone_number != phone_number:
+            user2 = User.objects.filter(phone_number=phone_number).first()
+            if user2 is not None:
+                return Response({'error': 'phone number is already Used'}, status=400)
+
         # Generate a random verification code
         verification_code = ''.join(random.choices(string.digits, k=6))
         # Send the verification code via SMS
@@ -66,6 +68,7 @@ class PhoneVerificationView(APIView):
             'to': phone_number,
             'text': f'Your verification code is: {verification_code}',
         })
+        print(response)
         # Save the verification code in the user's session
         request.session['verification_code'] = verification_code
         request.session['phone_number'] = phone_number
@@ -118,25 +121,65 @@ class LoginView(APIView):
         if not user.is_active:
             raise AuthenticationFailed("Your Account is disabled")
 
-        payload = {
+        access_token_payload = {
             'id': user.id,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
             'iat': datetime.datetime.utcnow()
         }
 
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        refresh_token_payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
+            'iat': datetime.datetime.utcnow()
+        }
+
+        access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS256')
+        refresh_token = jwt.encode(refresh_token_payload, settings.SECRET_KEY, algorithm='HS256')
 
         response = Response()
 
-        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.set_cookie(key='refresh_token', value=refresh_token, httponly=True)
         response.data = {
-            'jwt': token,
+            'access_token': access_token,
             'is_active': user.is_active,
             'is_phone_verified': user.is_phone_verified
         }
         return response
 
+class RefreshTokenView(APIView):
+    def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
 
+        if not refresh_token:
+            raise AuthenticationFailed('Refresh token not found!')
+
+        try:
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Refresh token has expired!')
+        except jwt.InvalidTokenError:
+            raise AuthenticationFailed('Invalid refresh token!')
+
+        user = User.objects.filter(id=payload['id']).first()
+        if not user:
+            raise AuthenticationFailed('User not found!')
+
+        access_token_payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
+        access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS256')
+
+        response = Response()
+
+        response.set_cookie(key='access_token', value=access_token, httponly=True)
+        response.data = {
+            'access_token': access_token,
+            'is_active': user.is_active,
+            'is_phone_verified': user.is_phone_verified
+        }
+        return response
 class UserView(APIView):
 
     def get(self, request):
@@ -184,8 +227,8 @@ class ForgotPasswordView(APIView):
             try:
                 user = User.objects.get(phone_number=phone_number)
             except User.DoesNotExist:
-                return Response({'message': 'User with this phone number does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-
+                return Response({'message': 'User with this phone number does not exist.'},
+                                status=status.HTTP_400_BAD_REQUEST)
 
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = password_reset_token.make_token(user)
@@ -218,7 +261,7 @@ class ResetPasswordView(APIView):
 
     def post(self, request, uidb64, token):
         user = self.get_user(uidb64)
-        print(user,uidb64,token)
+        print(user, uidb64, token)
         if user is not None and password_reset_token.check_token(user, token):
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():

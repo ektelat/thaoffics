@@ -1,6 +1,3 @@
-from abc import ABC
-
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import User
 
@@ -19,8 +16,8 @@ class UserSerializers(serializers.ModelSerializer):
         if password is not None:
             instance.set_password(password)
         instance.is_active = True
-        instance.is_phone_verified = False
-        instance.is_email_verified = False
+        instance.is_phone_verified = True
+        instance.is_email_verified = True
         instance.save()
         return instance
 
