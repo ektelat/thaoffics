@@ -1,20 +1,20 @@
 import datetime
 import random
 import string
+import time
 
 import jwt
-import vonage
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import Group
-from vonage import Sms
+from twilio.rest import Client
 from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
 
 from users.models import User
 from users.serializers import UserSerializers
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import force_bytes, force_str
+from django.utils.encoding import force_bytes
 
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.conf import settings
@@ -48,7 +48,6 @@ class PhoneVerificationView(APIView):
 
     def post(self, request):
         phone_number = request.data.get('phone_number')
-        print(request.user.is_phone_verified, request.user.phone_number)
         if not phone_number:
             return Response({'error': 'Please provide a phone number'}, status=400)
         if request.user.is_phone_verified:
@@ -61,14 +60,19 @@ class PhoneVerificationView(APIView):
         # Generate a random verification code
         verification_code = ''.join(random.choices(string.digits, k=6))
         # Send the verification code via SMS
-        client = vonage.Client(key=settings.API_KEY, secret=settings.API_SECRET)
-        sms = Sms(client)
-        response = sms.send_message({
-            'from': 'Thioffices',
-            'to': phone_number,
-            'text': f'Your verification code is: {verification_code}',
-        })
-        print(response)
+        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        # message = client.messages.create(
+        #     messaging_service_sid='MG5dcdd5fa17649694daac41b499d3221d',
+        #     body=f'Your verification code is: {verification_code}',
+        #     to=f'whatsapp:{phone_number}'
+        # )
+        message = client.messages.create(
+            body=f'Welcome and congratulations!! This message demonstrates your ability to send a WhatsApp message notification. Thank you for taking the time to test with us.',
+            from_='whatsapp:+972526936250',
+            to= f'whatsapp:{phone_number}'
+        )
+
+        print(message.status,phone_number)
         # Save the verification code in the user's session
         request.session['verification_code'] = verification_code
         request.session['phone_number'] = phone_number
@@ -119,7 +123,7 @@ class LoginView(APIView):
         if not user.check_password(password):
             raise AuthenticationFailed('Incorrect password!')
         if not user.is_active:
-            raise AuthenticationFailed("Your Account is disabled")
+                raise AuthenticationFailed("Your Account is disabled")
 
         access_token_payload = {
             'id': user.id,
@@ -233,13 +237,13 @@ class ForgotPasswordView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = password_reset_token.make_token(user)
             reset_password_url = settings.FRONTEND_URL + f'/auth/password/reset/confirm/{uidb64}/{token}/'
-            client = vonage.Client(key=settings.API_KEY, secret=settings.API_SECRET)
-            sms = Sms(client)
-            response = sms.send_message({
-                'from': 'Thioffices',
-                'to': phone_number,
-                'text': f'Hello,You are receiving this message because you requested a password reset for your account.\nTo reset your password, please click on the link below:\n{reset_password_url}',
-            })
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+            message = client.messages.create(
+                body=f'Hello,You are receiving this message because you requested a password reset for your account.\nTo reset your password, please click on the link below:\n{reset_password_url}',
+                from_='whatsapp:+972526936250',
+                to= f'whatsapp:{phone_number}'
+            )
 
             return Response(
                 {'message': 'Email with instructions to reset your password has been sent.', "url": reset_password_url},

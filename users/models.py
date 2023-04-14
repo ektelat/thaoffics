@@ -22,10 +22,12 @@ class Permissions:
 
 
 class User(AbstractUser):
-    bio = models.TextField(blank=True)
     name = models.TextField(blank=True)
+    id_number=models.TextField(blank=True)
+    address=models.TextField(blank=True)
     phone_number = models.TextField(unique=True, blank=True)
     profile_pic = models.ImageField(blank=True)
+    bio = models.TextField(blank=True)
     is_phone_verified=models.BooleanField(blank=False,default=False)
     is_email_verified=models.BooleanField(blank=False,default=False)
     is_active=models.BooleanField(default=True,blank=False)
