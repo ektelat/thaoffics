@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+
 from pathlib import Path
 import os
 
@@ -122,10 +123,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
-
+CORS_ALLOWED_ORIGINS = [
+    'http://10.29.158.66:4200',
+    # Add other allowed origins here
+]
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+
 
 TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
 TWILIO_AUTH_TOKEN = "87cf3a857a244fb7aef27891ae6701e6"
