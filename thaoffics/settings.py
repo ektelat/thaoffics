@@ -134,6 +134,9 @@ CORS_ALLOWED_ORIGINS = [
 
     # Add other allowed origins here
 ]
+CORS_ALLOW_HEADERS = ['*']
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+
 
 
 
