@@ -132,6 +132,7 @@ TWILIO_AUTH_TOKEN = "87cf3a857a244fb7aef27891ae6701e6"
 
 FRONTEND_URL = "http://localhost:4200"
 
+STATIC_ROOT = 'templates'
 
 
 APP_ID ="721384089772532",
