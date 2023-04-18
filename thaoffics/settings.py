@@ -123,13 +123,15 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
     'http://10.29.158.66:4200',
+    'http://localhost:4200',
+
     # Add other allowed origins here
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
 
 
 TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
