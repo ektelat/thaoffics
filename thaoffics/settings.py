@@ -25,7 +25,6 @@ SECRET_KEY = 'django-insecure-0y$eg3c9$lb2h3yd&^n_novbkz-*u5byrw-9fy93@5w3s(lzi+
 ROOT_URLCONF = 'thaoffics.urls'
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -37,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
     'users'
 ]
@@ -50,6 +50,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'users.middlewares.JWTAuthMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 TEMPLATES = [
@@ -120,6 +122,7 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
 
+
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
@@ -127,3 +130,11 @@ TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
 TWILIO_AUTH_TOKEN = "87cf3a857a244fb7aef27891ae6701e6"
 
 FRONTEND_URL = "http://localhost:4200"
+
+
+
+APP_ID ="721384089772532",
+APP_SECRET="6d490626181d7298858ec6fdbaa3c085",
+VERSION= "v13.0",
+PHONE_NUMBER_ID= "<<YOUR-WHATSAPP-BUSINESS-PHONE-NUMBER-ID>>",
+ACCESS_TOKEN="fca3320c25392e5c6ecaf7e59722b5ce"

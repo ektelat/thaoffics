@@ -3,16 +3,17 @@ import random
 import string
 import time
 
+import aiohttp
 import jwt
 from django.middleware.csrf import get_token
+from pydantic import json
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import Group
 from twilio.rest import Client
-from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
+from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer, UserSerializer
 
 from users.models import User
-from users.serializers import UserSerializers
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 
@@ -26,7 +27,7 @@ from rest_framework.views import APIView
 
 class Register(APIView):
     def post(self, request):
-        serializer = UserSerializers(data=request.data)
+        serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         group_name = request.data.get('group')
@@ -40,7 +41,7 @@ class Register(APIView):
         else:
             return Response({'error': 'Invalid group name'}, status=400)
         user.groups.add(group)
-        return Response(serializer.data)
+        return Response({"status":201}, status=status.HTTP_201_CREATED)
 
 
 class PhoneVerificationView(APIView):
@@ -197,7 +198,7 @@ class UserView(APIView):
             raise AuthenticationFailed('Unauthenticated!')
 
         user = User.objects.filter(id=payload['id']).first()
-        serializer = UserSerializers(user)
+        serializer = UserSerializer(user)
         return Response(serializer.data)
 
 
@@ -277,3 +278,8 @@ class ResetPasswordView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'message': 'Reset link is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+

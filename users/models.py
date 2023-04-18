@@ -31,6 +31,7 @@ class User(AbstractUser):
     is_phone_verified=models.BooleanField(blank=False,default=False)
     is_email_verified=models.BooleanField(blank=False,default=False)
     is_active=models.BooleanField(default=True,blank=False)
+    country_code=models.CharField(blank=True,max_length=5)
     username = None
     first_name = None
     last_name = None
