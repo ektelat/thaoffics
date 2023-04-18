@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
                 ('bio', models.TextField(blank=True)),
                 ('name', models.TextField(blank=True)),
-                ('phone_number', models.TextField(blank=True, unique=True)),
+                ('phone_number',models.CharField(blank=True, max_length=20, unique=True)),
                 ('profile_pic', models.ImageField(blank=True, upload_to='')),
                 ('is_phone_verified', models.BooleanField(default=False)),
                 ('is_email_verified', models.BooleanField(default=False)),

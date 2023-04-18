@@ -25,7 +25,7 @@ class User(AbstractUser):
     name = models.TextField(blank=True)
     id_number=models.TextField(blank=True)
     address=models.TextField(blank=True)
-    phone_number = models.TextField(unique=True, blank=True)
+    phone_number = models.CharField(unique=True, blank=True ,max_length=20)
     profile_pic = models.ImageField(blank=True)
     bio = models.TextField(blank=True)
     is_phone_verified=models.BooleanField(blank=False,default=False)

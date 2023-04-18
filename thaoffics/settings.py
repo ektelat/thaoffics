@@ -76,12 +76,13 @@ WSGI_APPLICATION = 'thaoffics.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': "beblio",
-        'USER': "root",
-        "PASSWORD": "",
-
+        'NAME': 'thioffices',
+        'USER': 'admin',
+        'PASSWORD': 'Prada1945',
+        'HOST': 'thioffices.cl6lviu7mlw3.eu-central-1.rds.amazonaws.com',
+        'PORT': '3306',
     }
 }
 
