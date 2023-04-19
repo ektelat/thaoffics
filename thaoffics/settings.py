@@ -126,7 +126,7 @@ AUTH_USER_MODEL = 'users.User'
 # CORS_ALLOW_CREDENTIALS = True
 # CORS_ORIGIN_ALLOW_ALL = True
 
-
+ALLOWED_HOSTS=['*']
 CORS_ALLOWED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
