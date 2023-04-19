@@ -120,11 +120,11 @@ class LoginView(APIView):
         password = request.data['password']
         user = User.objects.filter(phone_number=phone_number).first()
         if user is None:
-            raise AuthenticationFailed('User not found!')
+            raise AuthenticationFailed("Sorry, we couldn't find that user. Please check the username and try again.")
         if not user.check_password(password):
-            raise AuthenticationFailed('Incorrect password!')
+            raise AuthenticationFailed("Invalid login credentials. Please check your phone number and password and try again.")
         if not user.is_active:
-                raise AuthenticationFailed("Your Account is disabled")
+                raise AuthenticationFailed("Your account is currently disabled. Please contact customer support for assistance.")
 
         access_token_payload = {
             'id': user.id,
