@@ -49,10 +49,11 @@ class PhoneVerificationView(APIView):
 
     def post(self, request):
         phone_number = request.data.get('phone_number')
+        country_code = request.data.get('country_code')
         if not phone_number:
             return Response({'error': 'Please provide a phone number'}, status=400)
-        if request.user.is_phone_verified:
-            return Response({'error': 'phone number is already Verified'}, status=400)
+        # if request.user.is_phone_verified:
+        #     return Response({'error': 'phone number is already Verified'}, status=400)
         if request.user.phone_number != phone_number:
             user2 = User.objects.filter(phone_number=phone_number).first()
             if user2 is not None:
@@ -67,13 +68,17 @@ class PhoneVerificationView(APIView):
         #     body=f'Your verification code is: {verification_code}',
         #     to=f'whatsapp:{phone_number}'
         # )
-        message = client.messages.create(
-            body=f'Welcome and congratulations!! This message demonstrates your ability to send a WhatsApp message notification. Thank you for taking the time to test with us.',
-            from_='whatsapp:+972526936250',
-            to= f'whatsapp:{phone_number}'
-        )
 
-        print(message.status,phone_number)
+
+        message = client.messages.create(
+            from_='+972526936250',
+            body=f'Your verification code is: {verification_code}',
+            to=f'+{country_code}{phone_number}'
+
+        )
+        while message.status == 'queued':
+            message = message.fetch()
+
         # Save the verification code in the user's session
         request.session['verification_code'] = verification_code
         request.session['phone_number'] = phone_number
