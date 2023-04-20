@@ -131,6 +131,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
+'https://thioffices-front.herokuapp.com'
 
     # Add other allowed origins here
 ]
@@ -140,6 +141,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
+'https://thioffices-front.herokuapp.com'
 ]
 
 
