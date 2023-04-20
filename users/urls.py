@@ -4,10 +4,10 @@ from users.views import Register, LoginView, UserView, LogoutView, TestView, Pho
     ForgotPasswordView, ResetPasswordView, RefreshTokenView
 
 urlpatterns = [
-    path("register", Register.as_view()),
-    path('login', LoginView.as_view()),
-    path('user', UserView.as_view()),
-    path('logout', LogoutView.as_view()),
+    path("register", Register.as_view(), name="register"),
+    path('login', LoginView.as_view(),name="login"),
+    path('user', UserView.as_view(),name="user"),
+    path('logout', LogoutView.as_view(),name='logout'),
     path('test', TestView.as_view()),
     path('refresh_token/', RefreshTokenView.as_view(), name='refresh_token'),
     path('verify_phone/', PhoneVerificationView.as_view(), name='verify_phone'),
