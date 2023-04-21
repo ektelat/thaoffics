@@ -126,23 +126,13 @@ AUTH_USER_MODEL = 'users.User'
 CORS_ALLOW_CREDENTIALS = True
 # CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
 
 CORS_ORIGIN_WHITELIST = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
     'https://thioffices-front.herokuapp.com'
-]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
 ]
 
 ALLOWED_HOSTS=['*']
