@@ -153,6 +153,10 @@ CSRF_TRUSTED_ORIGINS = [
 'https://thioffices-front.herokuapp.com'
 ]
 
+CORS_ALLOW_HEADERS = [
+   '*'
+]
+
 
 
 TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
