@@ -133,13 +133,13 @@ class LoginView(APIView):
 
         access_token_payload = {
             'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
             'iat': datetime.datetime.utcnow()
         }
 
         refresh_token_payload = {
             'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30),
             'iat': datetime.datetime.utcnow()
         }
 
@@ -148,10 +148,10 @@ class LoginView(APIView):
 
         response = Response()
 
-        response.set_cookie(key='refresh_token', value=refresh_token, httponly=True)
         response.data = {
             'access_token': access_token,
             'is_active': user.is_active,
+            'refresh_token':refresh_token,
             'is_phone_verified': user.is_phone_verified
         }
         return response
