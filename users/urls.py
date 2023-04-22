@@ -1,9 +1,10 @@
 from django.urls import path, re_path, include, reverse_lazy
 from rest_framework.routers import DefaultRouter
 from users.views import Register, LoginView, UserView, LogoutView, TestView, PhoneVerificationView, VerifyPhoneView, \
-    ForgotPasswordView, ResetPasswordView, RefreshTokenView
+    ForgotPasswordView, ResetPasswordView, RefreshTokenView, CrsfToken
 
 urlpatterns = [
+    path("csrf-token", CrsfToken.as_view(), name="init"),
     path("register", Register.as_view(), name="register"),
     path('login', LoginView.as_view(),name="login"),
     path('user', UserView.as_view(),name="user"),

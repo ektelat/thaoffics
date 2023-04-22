@@ -286,5 +286,9 @@ class ResetPasswordView(APIView):
 
 
 
-
+class CrsfToken(APIView):
+    def get(self, request):
+        csrf_token = get_token(request)
+        print(csrf_token,'------------')
+        return Response({'csrf_token': csrf_token})
 

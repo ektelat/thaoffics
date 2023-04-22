@@ -123,10 +123,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
-CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_CREDENTIALS = True
 # CORS_ORIGIN_ALLOW_ALL = True
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+# CSRF_COOKIE_SECURE = True
+# CSRF_COOKIE_HTTPONLY=True
+# SESSION_COOKIE_SECURE = True
 
 CORS_ORIGIN_WHITELIST = [
     'http://10.29.158.66:4200',
@@ -153,9 +154,6 @@ CSRF_TRUSTED_ORIGINS = [
 'https://thioffices-front.herokuapp.com'
 ]
 
-CORS_ALLOW_HEADERS = [
-   '*'
-]
 
 
 
