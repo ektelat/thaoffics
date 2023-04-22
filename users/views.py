@@ -124,6 +124,7 @@ class LoginView(APIView):
         phone_number = request.data['phone_number']
         password = request.data['password']
         user = User.objects.filter(phone_number=phone_number).first()
+        serializer=UserSerializer(user)
         if user is None:
             raise AuthenticationFailed("Sorry, we couldn't find that user. Please check the username and try again.")
         if not user.check_password(password):
@@ -153,7 +154,7 @@ class LoginView(APIView):
             'is_active': user.is_active,
             'refresh_token':refresh_token,
             'is_phone_verified': user.is_phone_verified,
-            'user':user
+            'user':serializer.data
         }
         return response
 
