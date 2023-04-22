@@ -152,7 +152,8 @@ class LoginView(APIView):
             'access_token': access_token,
             'is_active': user.is_active,
             'refresh_token':refresh_token,
-            'is_phone_verified': user.is_phone_verified
+            'is_phone_verified': user.is_phone_verified,
+            'user':user
         }
         return response
 
@@ -183,7 +184,6 @@ class RefreshTokenView(APIView):
 
         response = Response()
 
-        response.set_cookie(key='access_token', value=access_token, httponly=True)
         response.data = {
             'access_token': access_token,
             'is_active': user.is_active,
