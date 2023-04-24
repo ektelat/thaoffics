@@ -15,6 +15,7 @@ class JWTAuthMiddleware:
     def __call__(self, request):
         token = get_token(request)
         # Check if token is present in the header
+
         auth_header = request.headers.get('Authorization')
 
         if auth_header and auth_header.startswith('Bearer '):
@@ -31,5 +32,6 @@ class JWTAuthMiddleware:
                 pass
 
         response = self.get_response(request)
+
 
         return response

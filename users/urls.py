@@ -1,5 +1,4 @@
-from django.urls import path, re_path, include, reverse_lazy
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from users.views import Register, LoginView, UserView, LogoutView, TestView, PhoneVerificationView, VerifyPhoneView, \
     ForgotPasswordView, ResetPasswordView, RefreshTokenView, CrsfToken
 

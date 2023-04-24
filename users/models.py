@@ -56,3 +56,15 @@ class User(AbstractUser):
 
     def is_customer(self):
         return self.groups.filter(name=User.Groups.CUSTOMER).exists()
+
+
+from django.utils import timezone
+
+class PhoneVerification(models.Model):
+    phone_number = models.CharField(max_length=20)
+    verification_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at

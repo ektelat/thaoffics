@@ -1,19 +1,23 @@
 import datetime
 import random
 import string
-import time
 
-import aiohttp
 import jwt
+import phone_verify
 from django.middleware.csrf import get_token
-from pydantic import json
+from random import randint
+from django.core.cache import cache
+from django.utils import timezone
+
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import Group
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from twilio.rest import Client
 from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer, UserSerializer
 
-from users.models import User
+from users.models import User, PhoneVerification
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 
@@ -41,15 +45,17 @@ class Register(APIView):
         else:
             return Response({'error': 'Invalid group name'}, status=400)
         user.groups.add(group)
-        return Response({"status":201}, status=status.HTTP_201_CREATED)
+        return Response({"status": 201}, status=status.HTTP_201_CREATED)
 
 
 class PhoneVerificationView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         phone_number = request.data.get('phone_number')
         country_code = request.data.get('country_code')
+
         if not phone_number:
             return Response({'error': 'Please provide a phone number'}, status=400)
         # if request.user.is_phone_verified:
@@ -69,7 +75,6 @@ class PhoneVerificationView(APIView):
         #     to=f'whatsapp:{phone_number}'
         # )
 
-
         message = client.messages.create(
             from_='+972526936250',
             body=f'Your verification code is: {verification_code}',
@@ -78,28 +83,38 @@ class PhoneVerificationView(APIView):
         )
         while message.status == 'queued':
             message = message.fetch()
+        expires_in_minutes = getattr(settings, 'PHONE_VERIFICATION_EXPIRATION_MINUTES', 5)
+        expires_at = timezone.now() + datetime.timedelta(minutes=expires_in_minutes)
 
-        # Save the verification code in the user's session
-        request.session['verification_code'] = verification_code
-        request.session['phone_number'] = phone_number
+        PhoneVerification.objects.create(
+            phone_number=phone_number,
+            verification_code=verification_code,
+            expires_at=expires_at,
+        )
 
-        return Response({'success': 'Verification code sent successfully'}, status=200)
+        return Response({'success': 'Verification code sent successfully', "phone_number":phone_number}, status=200)
+
 
 
 class VerifyPhoneView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
-        phone_number = request.session.get('phone_number')
-        verification_code = request.session.get('verification_code')
-        submitted_code = request.data.get('verification_code')
+        phone_number = request.data.get('phone_number')
+        verification_code = request.data.get('verification_code')
         user = request.user
-        if not phone_number or not verification_code or not submitted_code:
+        if not phone_number or not verification_code :
             return Response({'error': 'Please provide a phone number and a verification code'}, status=400)
         if user.is_phone_verified:
             return Response({'error': 'phone number is already Verified'}, status=400)
-        if submitted_code == verification_code:
 
+        verification = PhoneVerification.objects.filter(
+            phone_number=phone_number,
+            verification_code=verification_code,
+        ).first()
+        print(verification.phone_number)
+
+        if verification and not verification.is_expired():
+            verification.delete()
             if user.is_phone_verified:
                 return Response({'error': 'phone number is already Verified'}, status=400)
             # Find the user with the matching phone number
@@ -109,13 +124,9 @@ class VerifyPhoneView(APIView):
             user.is_phone_verified = True
             user.save()
 
-            # Clear the verification code from the session
-            del request.session['verification_code']
-            del request.session['phone_number']
-
-            return Response({'success': 'Phone number verified successfully'}, status=200)
+            return Response({'success': 'Phone number verified successfully', "success": True}, status=200)
         else:
-            return Response({'error': 'Invalid verification code'}, status=400)
+            return Response({'error': 'Invalid verification code', "success": False}, status=400)
 
 
 class LoginView(APIView):
@@ -124,39 +135,28 @@ class LoginView(APIView):
         phone_number = request.data['phone_number']
         password = request.data['password']
         user = User.objects.filter(phone_number=phone_number).first()
-        serializer=UserSerializer(user)
+        serializer = UserSerializer(user)
         if user is None:
             raise AuthenticationFailed("Sorry, we couldn't find that user. Please check the username and try again.")
         if not user.check_password(password):
-            raise AuthenticationFailed("Invalid login credentials. Please check your phone number and password and try again.")
+            raise AuthenticationFailed(
+                "Invalid login credentials. Please check your phone number and password and try again.")
         if not user.is_active:
-                raise AuthenticationFailed("Your account is currently disabled. Please contact customer support for assistance.")
+            raise AuthenticationFailed(
+                "Your account is currently disabled. Please contact customer support for assistance.")
 
-        access_token_payload = {
-            'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
-            'iat': datetime.datetime.utcnow()
-        }
-
-        refresh_token_payload = {
-            'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=30),
-            'iat': datetime.datetime.utcnow()
-        }
-
-        access_token = jwt.encode(access_token_payload, settings.SECRET_KEY, algorithm='HS256')
-        refresh_token = jwt.encode(refresh_token_payload, settings.SECRET_KEY, algorithm='HS256')
-
+        access_token = AccessToken.for_user(user)
+        refresh_token = RefreshToken.for_user(user)
         response = Response()
-
         response.data = {
-            'access_token': access_token,
+            'access_token': str(access_token),
             'is_active': user.is_active,
-            'refresh_token':refresh_token,
+            'refresh_token': str(refresh_token),
             'is_phone_verified': user.is_phone_verified,
-            'user':serializer.data
+            'user': serializer.data
         }
         return response
+
 
 class RefreshTokenView(APIView):
     def post(self, request):
@@ -191,6 +191,8 @@ class RefreshTokenView(APIView):
             'is_phone_verified': user.is_phone_verified
         }
         return response
+
+
 class UserView(APIView):
 
     def get(self, request):
@@ -249,7 +251,7 @@ class ForgotPasswordView(APIView):
             message = client.messages.create(
                 body=f'Hello,You are receiving this message because you requested a password reset for your account.\nTo reset your password, please click on the link below:\n{reset_password_url}',
                 from_='whatsapp:+972526936250',
-                to= f'whatsapp:{phone_number}'
+                to=f'whatsapp:{phone_number}'
             )
 
             return Response(
@@ -286,10 +288,20 @@ class ResetPasswordView(APIView):
             return Response({'message': 'Reset link is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class CrsfToken(APIView):
     def get(self, request):
         csrf_token = get_token(request)
-        print(csrf_token,'------------')
+        print(csrf_token, '------------')
         return Response({'csrf_token': csrf_token})
 
+
+
+
+
+
+
+def set_verification_code_for_phone_number(phone_number, verification_code):
+    cache.set(phone_number, verification_code, timeout=300)  # Cache for 5 minutes
+
+def get_verification_code_for_phone_number(phone_number):
+    return cache.get(phone_number)
