@@ -36,11 +36,11 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'users.middlewares.JWTAuthMiddleware',
+
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
@@ -146,14 +146,17 @@ CORS_ORIGIN_WHITELIST = [
     'http://10.29.158.66:4200',
     'http://localhost:4200/',
     'http://197.230.122.195:4200',
-    'https://thioffices-front.herokuapp.com'
+    'https://thioffices-front.herokuapp.com',
+    'http://www.thaoffices.com/'
+
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
-'https://thioffices-front.herokuapp.com'
+'https://thioffices-front.herokuapp.com',
+    'http://www.thaoffices.com/'
 
     # Add other allowed origins here
 ]
@@ -164,6 +167,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
     'http://197.230.122.195:4200',
 'https://thioffices-front.herokuapp.com'
+    ,'http://www.thaoffices.com/'
 ]
 
 
@@ -171,7 +175,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
-TWILIO_AUTH_TOKEN = "ce3622cfbd68e8199aacf31fe7d52933"
+TWILIO_AUTH_TOKEN = "8f1269d199eb0af73459c5a13e002be7"
 PHONE_VERIFY_CODE_LENGTH = 6
 PHONE_VERIFY_CODE_EXPIRATION = 180  # 3 minutes
 PHONE_VERIFY_SENDER = 'Thioffices'

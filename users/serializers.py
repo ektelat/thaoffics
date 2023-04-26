@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group, Permission
 from rest_framework import serializers
 from .models import User
 
@@ -51,7 +52,7 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
     email = serializers.CharField()
     class Meta:
         model=User
-        fields = ["name", 'phone_number', 'email']
+        fields = ["name",'country_code','phone_number', 'email']
 
 
 class ResetPasswordSerializer(serializers.ModelSerializer):
@@ -60,3 +61,13 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['password']
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Group
+        fields = ('id', 'name', 'permissions')
+class PermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Permission
+        fields = ('name', 'codename')

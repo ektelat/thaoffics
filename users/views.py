@@ -1,29 +1,23 @@
 import datetime
 import random
 import string
-
 import jwt
-import phone_verify
 from django.middleware.csrf import get_token
-from random import randint
 from django.core.cache import cache
 from django.utils import timezone
-
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from twilio.rest import Client
-from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer, UserSerializer
-
+from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer, UserSerializer, GroupSerializer, \
+    PermissionsSerializer
 from users.models import User, PhoneVerification
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
-
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.conf import settings
-
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -64,55 +58,62 @@ class PhoneVerificationView(APIView):
             user2 = User.objects.filter(phone_number=phone_number).first()
             if user2 is not None:
                 return Response({'error': 'phone number is already Used'}, status=400)
+        verification = PhoneVerification.objects.filter(
+            phone_number=phone_number
+        ).order_by('-created_at').first()
 
-        # Generate a random verification code
-        verification_code = ''.join(random.choices(string.digits, k=6))
-        # Send the verification code via SMS
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        # message = client.messages.create(
-        #     messaging_service_sid='MG5dcdd5fa17649694daac41b499d3221d',
-        #     body=f'Your verification code is: {verification_code}',
-        #     to=f'whatsapp:{phone_number}'
-        # )
+        if (verification is None or verification.is_expired()):
+            # Generate a random verification code
+            verification_code = ''.join(random.choices(string.digits, k=6))
+            # Send the verification code via SMS
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            # message = client.messages.create(
+            #     messaging_service_sid='MG5dcdd5fa17649694daac41b499d3221d',
+            #     body=f'Your verification code is: {verification_code}',
+            #     to=f'whatsapp:{phone_number}'
+            # )
 
-        message = client.messages.create(
-            from_='+972526936250',
-            body=f'Your verification code is: {verification_code}',
-            to=f'+{country_code}{phone_number}'
+            message = client.messages.create(
+                from_='+972526936250',
+                body=f'Your verification code is: {verification_code}',
+                to=f'+{country_code}{phone_number}'
 
-        )
-        while message.status == 'queued':
-            message = message.fetch()
-        expires_in_minutes = getattr(settings, 'PHONE_VERIFICATION_EXPIRATION_MINUTES', 5)
-        expires_at = timezone.now() + datetime.timedelta(minutes=expires_in_minutes)
+            )
+            while message.status == 'queued':
+                message = message.fetch()
+            expires_in_minutes = getattr(settings, 'PHONE_VERIFICATION_EXPIRATION_MINUTES', 5)
+            expires_at = timezone.now() + datetime.timedelta(minutes=expires_in_minutes)
 
-        PhoneVerification.objects.create(
-            phone_number=phone_number,
-            verification_code=verification_code,
-            expires_at=expires_at,
-        )
+            PhoneVerification.objects.create(
+                phone_number=phone_number,
+                verification_code=verification_code,
+                expires_at=expires_at,
+            )
 
-        return Response({'success': 'Verification code sent successfully', "phone_number":phone_number}, status=200)
-
+            return Response({'success': 'Verification code sent successfully', "phone_number": phone_number}, status=200)
+        else:
+            remaining_time = verification.expires_at - datetime.datetime.now(timezone.utc)
+            remaining_minutes = int(remaining_time.total_seconds() / 60)
+            return Response(
+                {
+                    'msg': f'Sorry, we cannot resend the verification code yet. Please wait {remaining_minutes} minutes until the previous verification code expires and then try again. Thank you for your patience'},
+                status=400)
 
 
 class VerifyPhoneView(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         phone_number = request.data.get('phone_number')
         verification_code = request.data.get('verification_code')
         user = request.user
-        if not phone_number or not verification_code :
+        if not phone_number or not verification_code:
             return Response({'error': 'Please provide a phone number and a verification code'}, status=400)
         if user.is_phone_verified:
             return Response({'error': 'phone number is already Verified'}, status=400)
-
         verification = PhoneVerification.objects.filter(
-            phone_number=phone_number,
-            verification_code=verification_code,
-        ).first()
-        print(verification.phone_number)
-
+            phone_number=phone_number
+        ).order_by('-created_at').first()
         if verification and not verification.is_expired():
             verification.delete()
             if user.is_phone_verified:
@@ -129,12 +130,65 @@ class VerifyPhoneView(APIView):
             return Response({'error': 'Invalid verification code', "success": False}, status=400)
 
 
+class ResendVerificationView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        phone_number = request.data.get('phone_number')
+
+        if not phone_number:
+            return Response({'error': 'Please provide a phone number'}, status=400)
+
+        if request.user.phone_number != phone_number:
+            user2 = User.objects.filter(phone_number=phone_number).first()
+            if user2 is not None:
+                return Response({'error': 'phone number is already Used'}, status=400)
+
+        verification = PhoneVerification.objects.filter(
+            phone_number=phone_number
+        ).order_by('-created_at').first()
+
+        if (verification.is_expired()):
+            verification_code = ''.join(random.choices(string.digits, k=6))
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+            message = client.messages.create(
+                from_='+972526936250',
+                body=f'Your verification code is: {verification_code}',
+                to=f'+{request.user.country_code}{phone_number}'
+
+            )
+            while message.status == 'queued':
+                message = message.fetch()
+            expires_in_minutes = getattr(settings, 'PHONE_VERIFICATION_EXPIRATION_MINUTES', 5)
+            expires_at = timezone.now() + datetime.timedelta(minutes=expires_in_minutes)
+
+            PhoneVerification.objects.create(
+                phone_number=phone_number,
+                verification_code=verification_code,
+                expires_at=expires_at,
+            )
+            return Response(
+                {'success': True, 'msg': 'Verification code Resent successfully', "phone_number": phone_number},
+                status=200)
+        else:
+            remaining_time = verification.expires_at - datetime.datetime.now(timezone.utc)
+            remaining_minutes = int(remaining_time.total_seconds() / 60)+1
+            return Response(
+                {'msg': f'Sorry, we cannot resend the verification code yet. Please wait {remaining_minutes} minutes until the previous verification code expires and then try again. Thank you for your patience'},
+                status=400)
+
+
 class LoginView(APIView):
     def post(self, request):
         token = get_token(request)
         phone_number = request.data['phone_number']
         password = request.data['password']
         user = User.objects.filter(phone_number=phone_number).first()
+        group=Group.objects.filter(user=user).first()
+        permissions=Permission.objects.filter(group=group);
         serializer = UserSerializer(user)
         if user is None:
             raise AuthenticationFailed("Sorry, we couldn't find that user. Please check the username and try again.")
@@ -148,12 +202,17 @@ class LoginView(APIView):
         access_token = AccessToken.for_user(user)
         refresh_token = RefreshToken.for_user(user)
         response = Response()
+        groupSeriallezier=GroupSerializer(group)
+        permissionsSeriallezier=PermissionsSerializer(instance=permissions, many=True)
+        print(group,"======================?")
         response.data = {
             'access_token': str(access_token),
             'is_active': user.is_active,
             'refresh_token': str(refresh_token),
             'is_phone_verified': user.is_phone_verified,
-            'user': serializer.data
+            'user': serializer.data,
+            'group':groupSeriallezier.data,
+            'permissions':permissionsSeriallezier.data
         }
         return response
 
@@ -232,7 +291,6 @@ password_reset_token = PasswordResetTokenGenerator()
 
 class ForgotPasswordView(APIView):
     serializer_class = ForgotPasswordSerializer
-
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -247,15 +305,16 @@ class ForgotPasswordView(APIView):
             token = password_reset_token.make_token(user)
             reset_password_url = settings.FRONTEND_URL + f'/auth/password/reset/confirm/{uidb64}/{token}/'
             client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-
             message = client.messages.create(
+                from_='+972526936250',
                 body=f'Hello,You are receiving this message because you requested a password reset for your account.\nTo reset your password, please click on the link below:\n{reset_password_url}',
-                from_='whatsapp:+972526936250',
-                to=f'whatsapp:{phone_number}'
+                to=f'+{serializer.validated_data.get("country_code")}{phone_number}'
             )
+            while message.status == 'queued':
+                message = message.fetch()
 
             return Response(
-                {'message': 'Email with instructions to reset your password has been sent.', "url": reset_password_url},
+                {'message': 'sms  with instructions to reset your password has been sent.', "url": reset_password_url},
                 status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -288,20 +347,3 @@ class ResetPasswordView(APIView):
             return Response({'message': 'Reset link is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CrsfToken(APIView):
-    def get(self, request):
-        csrf_token = get_token(request)
-        print(csrf_token, '------------')
-        return Response({'csrf_token': csrf_token})
-
-
-
-
-
-
-
-def set_verification_code_for_phone_number(phone_number, verification_code):
-    cache.set(phone_number, verification_code, timeout=300)  # Cache for 5 minutes
-
-def get_verification_code_for_phone_number(phone_number):
-    return cache.get(phone_number)
