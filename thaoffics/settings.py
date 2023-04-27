@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'twilio',
     'corsheaders',
     'rest_framework.authtoken',
     'users',
@@ -127,49 +126,36 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
 
-
-CORS_ALLOWED_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with'
-]
-
-
-
+ALLOWED_HOSTS = ['*']
 CORS_ORIGIN_WHITELIST = [
     'http://10.29.158.66:4200',
-    'http://localhost:4200/',
+    'http://localhost:4200',
     'http://197.230.122.195:4200',
     'https://thioffices-front.herokuapp.com',
-    'http://www.thaoffices.com/'
-
+    'http://www.thaoffices.com',
+    'www.thaoffices.com',
+    'https://thioffices.herokuapp.com'
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
-'https://thioffices-front.herokuapp.com',
-    'http://www.thaoffices.com/'
-
-    # Add other allowed origins here
+    'https://thioffices-front.herokuapp.com',
+    'http://www.thaoffices.com',
+    'www.thaoffices.com',
+    'https://thioffices.herokuapp.com'
 ]
-
 
 CSRF_TRUSTED_ORIGINS = [
     'http://10.29.158.66:4200',
     'http://localhost:4200',
     'http://197.230.122.195:4200',
-'https://thioffices-front.herokuapp.com'
-    ,'http://www.thaoffices.com/'
+    'https://thioffices-front.herokuapp.com',
+    'http://www.thaoffices.com',
+    'www.thaoffices.com',
+    'https://thioffices.herokuapp.com'
 ]
-
 
 
 
