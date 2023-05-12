@@ -19,7 +19,22 @@ class Permissions:
     SUBSCRIBE = ('subscribe', 'Can subscribe to the service')
     CONTACT_OFFICE = ('contact_office', 'Can contact the office through a special number')
     SEND_MESSAGES_TO_OFFICE = ('send_messages_to_office', 'Can send and receive messages from the office with files or pictures')
+from django.contrib.auth.models import BaseUserManager
 
+class CustomUserManager(BaseUserManager):
+    def create_user(self, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault('is_superuser', False)
+        if not phone_number:
+            raise ValueError('The phone number field must be set')
+        user = self.model(phone_number=phone_number, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, phone_number, password=None, **extra_fields):
+
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(phone_number, password, **extra_fields)
 
 class User(AbstractUser):
     name = models.TextField(blank=True)
@@ -36,7 +51,8 @@ class User(AbstractUser):
     first_name = None
     last_name = None
     USERNAME_FIELD = "phone_number"
-
+    REQUIRED_FIELDS=[]
+    objects = CustomUserManager()
 
     # Define the groups and permissions for the user model
     class Groups:
