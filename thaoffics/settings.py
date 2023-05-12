@@ -1,4 +1,3 @@
-
 import datetime
 from pathlib import Path
 import os
@@ -15,7 +14,6 @@ SECRET_KEY = 'django-insecure-0y$eg3c9$lb2h3yd&^n_novbkz-*u5byrw-9fy93@5w3s(lzi+
 ROOT_URLCONF = 'thaoffics.urls'
 DEBUG = True
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -28,7 +26,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework.authtoken',
+    'storages',
     'users',
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -66,7 +66,7 @@ WSGI_APPLICATION = 'thaoffics.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-'default': {
+    'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'thioffices',
         'USER': 'admin',
@@ -122,7 +122,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -133,7 +132,7 @@ CORS_ORIGIN_WHITELIST = [
     'http://197.230.122.195:4200',
     'https://thioffices-front.herokuapp.com',
     'http://www.thaoffices.com',
-    'www.thaoffices.com',
+    'http://www.thaoffices.com',
     'https://thioffices.herokuapp.com'
 ]
 
@@ -143,7 +142,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://197.230.122.195:4200',
     'https://thioffices-front.herokuapp.com',
     'http://www.thaoffices.com',
-    'www.thaoffices.com',
+    'http://www.thaoffices.com',
     'https://thioffices.herokuapp.com'
 ]
 
@@ -153,12 +152,9 @@ CSRF_TRUSTED_ORIGINS = [
     'http://197.230.122.195:4200',
     'https://thioffices-front.herokuapp.com',
     'http://www.thaoffices.com',
-    'www.thaoffices.com',
+    'http://www.thaoffices.com',
     'https://thioffices.herokuapp.com'
 ]
-
-
-
 
 TWILIO_ACCOUNT_SID = "AC1798c23655ffb0b74287e43740d5a0ad"
 TWILIO_AUTH_TOKEN = "8f1269d199eb0af73459c5a13e002be7"
@@ -178,15 +174,29 @@ PHONE_VERIFY_BACKEND_KWARGS = {
 
 PHONE_VERIFICATION = {'PHONE_FIELD': 'phone'}
 
-
-
 FRONTEND_URL = "http://localhost:4200"
 
 STATIC_ROOT = 'templates'
 
+APP_ID = "721384089772532",
+APP_SECRET = "ce3622cfbd68e8199aacf31fe7d52933",
+VERSION = "v13.0",
+PHONE_NUMBER_ID = "<<YOUR-WHATSAPP-BUSINESS-PHONE-NUMBER-ID>>",
+ACCESS_TOKEN = "fca3320c25392e5c6ecaf7e59722b5ce"
+## AWS Config
+AWS_ACCESS_KEY_ID = 'AKIA5EM7VLRZYBUOHZWX'
+AWS_SECRET_ACCESS_KEY = 'JLh88fwmxHSQH1kuE2GWMEA/55kRoMgo8SLZpzPr'
+AWS_STORAGE_BUCKET_NAME = 'thaoffices'
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_DEFAULT_ACL = None
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 
-APP_ID ="721384089772532",
-APP_SECRET="ce3622cfbd68e8199aacf31fe7d52933",
-VERSION= "v13.0",
-PHONE_NUMBER_ID= "<<YOUR-WHATSAPP-BUSINESS-PHONE-NUMBER-ID>>",
-ACCESS_TOKEN="fca3320c25392e5c6ecaf7e59722b5ce"
+AWS_LOCATION = 'static'
+AWS_MEDIA = 'media'
+
+STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+MEDIA_URL='https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN,AWS_MEDIA )
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+DEFAULT_FILE_STORAGE='storages.backends.s3boto3.S3Boto3Storage'
