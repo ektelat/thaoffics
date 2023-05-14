@@ -90,7 +90,8 @@ class PhoneVerificationView(APIView):
                 expires_at=expires_at,
             )
 
-            return Response({'success': 'Verification code sent successfully', "phone_number": phone_number}, status=200)
+            return Response({'success': 'Verification code sent successfully', "phone_number": phone_number},
+                            status=200)
         else:
             remaining_time = verification.expires_at - datetime.datetime.now(timezone.utc)
             remaining_minutes = int(remaining_time.total_seconds() / 60)
@@ -175,20 +176,22 @@ class ResendVerificationView(APIView):
                 status=200)
         else:
             remaining_time = verification.expires_at - datetime.datetime.now(timezone.utc)
-            remaining_minutes = int(remaining_time.total_seconds() / 60)+1
+            remaining_minutes = int(remaining_time.total_seconds() / 60) + 1
             return Response(
-                {'msg': f'Sorry, we cannot resend the verification code yet. Please wait {remaining_minutes} minutes until the previous verification code expires and then try again. Thank you for your patience'},
+                {
+                    'msg': f'Sorry, we cannot resend the verification code yet. Please wait {remaining_minutes} minutes until the previous verification code expires and then try again. Thank you for your patience'},
                 status=400)
 
 
 class LoginView(APIView):
+
     def post(self, request):
-        token = get_token(request)
         phone_number = request.data['phone_number']
         password = request.data['password']
         user = User.objects.filter(phone_number=phone_number).first()
-        group=Group.objects.filter(user=user).first()
-        permissions=Permission.objects.filter(group=group);
+        print(user.profile_pic, "----------------->Photo")
+        group = Group.objects.filter(user=user).first()
+        permissions = Permission.objects.filter(group=group);
         serializer = UserSerializer(user)
         if user is None:
             raise AuthenticationFailed("Sorry, we couldn't find that user. Please check the username and try again.")
@@ -202,17 +205,17 @@ class LoginView(APIView):
         access_token = AccessToken.for_user(user)
         refresh_token = RefreshToken.for_user(user)
         response = Response()
-        groupSeriallezier=GroupSerializer(group)
-        permissionsSeriallezier=PermissionsSerializer(instance=permissions, many=True)
-        print(group,"======================?")
+        groupSeriallezier = GroupSerializer(group)
+        permissionsSeriallezier = PermissionsSerializer(instance=permissions, many=True)
+        print(group, "======================?")
         response.data = {
             'access_token': str(access_token),
             'is_active': user.is_active,
             'refresh_token': str(refresh_token),
             'is_phone_verified': user.is_phone_verified,
             'user': serializer.data,
-            'group':groupSeriallezier.data,
-            'permissions':permissionsSeriallezier.data
+            'group': groupSeriallezier.data,
+            'permissions': permissionsSeriallezier.data
         }
         return response
 
@@ -291,6 +294,7 @@ password_reset_token = PasswordResetTokenGenerator()
 
 class ForgotPasswordView(APIView):
     serializer_class = ForgotPasswordSerializer
+
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -347,3 +351,15 @@ class ResetPasswordView(APIView):
             return Response({'message': 'Reset link is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UserUpdateView(APIView):
+    serializer_class = UserSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, format=None):
+        serializer = self.serializer_class(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'user':serializer.data})
+        else:
+            return Response(serializer.errors, status=400)

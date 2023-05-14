@@ -11,10 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField()
     password = serializers.CharField(write_only=True)
     bio = serializers.CharField(required=False)
+    profile_pic = serializers.ImageField(required=False)  # Add profile_pic field
 
     class Meta:
         model = User
-        fields = ["id", "name", "email", "id_number", "address","country_code","phone_number", "password", "bio"]
+        fields = ["id", "name", "email", "id_number", "address", "country_code", "phone_number", "password", "bio",
+                  "profile_pic"]
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -45,6 +47,23 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_phone_verified = False
         instance.is_email_verified = False
         instance.save()
+        return instance
+    def update(self, instance, validated_data):
+        # Update the profile_pic field if it exists in the validated_data
+        if 'profile_pic' in validated_data:
+            instance.profile_pic = validated_data['profile_pic']
+
+        # Update other fields if they exist in the validated_data
+        instance.name = validated_data.get('name', instance.name)
+        instance.email = validated_data.get('email', instance.email)
+        instance.id_number = validated_data.get('id_number', instance.id_number)
+        instance.address = validated_data.get('address', instance.address)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+        instance.bio = validated_data.get('bio', instance.bio)
+
+        # Save the updated instance
+        instance.save()
+
         return instance
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):

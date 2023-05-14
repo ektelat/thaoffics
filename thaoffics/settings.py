@@ -4,8 +4,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -28,7 +27,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'storages',
     'users',
-    'blog',
 ]
 
 MIDDLEWARE = [
@@ -184,8 +182,12 @@ VERSION = "v13.0",
 PHONE_NUMBER_ID = "<<YOUR-WHATSAPP-BUSINESS-PHONE-NUMBER-ID>>",
 ACCESS_TOKEN = "fca3320c25392e5c6ecaf7e59722b5ce"
 ## AWS Config
-AWS_ACCESS_KEY_ID = 'AKIA5EM7VLRZYBUOHZWX'
-AWS_SECRET_ACCESS_KEY = 'JLh88fwmxHSQH1kuE2GWMEA/55kRoMgo8SLZpzPr'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+AWS_ACCESS_KEY_ID = 'AKIA5EM7VLRZ7IZ47NZG'
+AWS_SECRET_ACCESS_KEY = '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'
 AWS_STORAGE_BUCKET_NAME = 'thaoffices'
 AWS_S3_FILE_OVERWRITE = False
 AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}

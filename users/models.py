@@ -1,8 +1,10 @@
-from django.contrib.auth.models import AbstractUser
+from io import BytesIO
+
+from django.core.files.storage import default_storage
 from django.db import models
-
-from django.contrib.auth.models import AbstractUser, Group
-
+from django.contrib.auth.models import AbstractUser
+from PIL import Image
+import os
 
 class Permissions:
     # Owner permissions
@@ -41,7 +43,7 @@ class User(AbstractUser):
     id_number=models.TextField(blank=True)
     address=models.TextField(blank=True)
     phone_number = models.CharField(unique=True, blank=True ,max_length=20)
-    profile_pic = models.ImageField(blank=True)
+    profile_pic = models.ImageField(blank=True,upload_to='user_profiles')
     bio = models.TextField(blank=True)
     is_phone_verified=models.BooleanField(blank=False,default=False)
     is_email_verified=models.BooleanField(blank=False,default=False)
@@ -54,12 +56,44 @@ class User(AbstractUser):
     REQUIRED_FIELDS=[]
     objects = CustomUserManager()
 
+
     # Define the groups and permissions for the user model
     class Groups:
         OWNER = 'Owner'
         STAFF = 'Staff'
         CUSTOMER = 'Customer'
-        
+
+    def save(self, *args, **kwargs):
+        if self.id:
+            try:
+                old_user = User.objects.get(pk=self.id)
+                if old_user.profile_pic != self.profile_pic:
+                    if old_user.profile_pic:
+                        # Delete the old profile picture
+                        old_user.profile_pic.delete(save=False)
+            except User.DoesNotExist:
+                pass
+
+        # Set the profile_pic filename as the user id
+        if self.profile_pic:
+            ext = os.path.splitext(self.profile_pic.name)[1].lower()
+            self.profile_pic.name = f'user_profiles/{self.id}{ext}'
+
+        # Override the save() method to resize the image and save it as PNG
+        super().save(*args, **kwargs)
+
+        if self.profile_pic:
+            img = Image.open(default_storage.open(self.profile_pic.name))
+            img = img.convert('RGB')
+            img.thumbnail((500, 500))
+
+            # Save the image to a BytesIO buffer
+            image_buffer = BytesIO()
+            img.save(image_buffer, format='PNG', quality=90)
+            image_buffer.seek(0)
+
+            # Save the image to the storage backend
+            default_storage.save(self.profile_pic.name, image_buffer)
 
     def __str__(self):
         return self.phone_number
